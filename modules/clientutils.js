@@ -28,14 +28,14 @@
  *
  */
 (function(exports) {
-    exports.create = function() {
+    exports.create = function create() {
         return new ClientUtils();
     };
 
     /**
      * Casper client-side helpers.
      */
-    ClientUtils = function() {
+    ClientUtils = function ClientUtils() {
         var BASE64_ENCODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         var BASE64_DECODE_CHARS = new Array(
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -120,7 +120,7 @@
          * @param  String  selector        A CSS3 selector to the element to click
          * @return Boolean
          */
-        this.click = function(selector) {
+        this.click = function click(selector) {
             var elem = this.findOne(selector);
             if (!elem) {
                 this.log("click(): Couldn't find any element matching '" + selector + "' selector", "error");
@@ -139,7 +139,7 @@
          * @param  String  str  The base64 encoded contents
          * @return string
          */
-        this.decode = function(str) {
+        this.decode = function decode(str) {
             var c1, c2, c3, c4, i = 0, len = str.length, out = "";
             while (i < len) {
                 do {
@@ -187,7 +187,7 @@
          * @param  String  source  The source to encode
          * @return string
          */
-        this.encode = function(source) {
+        this.encode = function encode(source) {
             return this.base64encodeArrayBuffer(source);
         };
 
@@ -197,7 +197,7 @@
          * @param  String  selector  CSS3 selector
          * @return Boolean
          */
-        this.exists = function(selector) {
+        this.exists = function exists(selector) {
             try {
                 return document.querySelectorAll(selector).length > 0;
             } catch (e) {
@@ -212,10 +212,10 @@
          * @param  String  selector  A CSS3 selector
          * @return String
          */
-        this.fetchText = function(selector) {
+        this.fetchText = function fetchText(selector) {
             var text = '', elements = this.findAll(selector);
             if (elements && elements.length) {
-                Array.prototype.forEach.call(elements, function(element) {
+                Array.prototype.forEach.call(elements, function _forEach(element) {
                     text += element.innerText;
                 });
             }
@@ -229,7 +229,7 @@
          * @param  Object              vals    Field values
          * @return Object                      An object containing setting result for each field, including file uploads
          */
-        this.fill = function(form, vals) {
+        this.fill = function fill(form, vals) {
             var out = {
                 errors: [],
                 fields: [],
@@ -283,7 +283,7 @@
          * @param  String  selector  CSS3 selector
          * @return NodeList|undefined
          */
-        this.findAll = function(selector) {
+        this.findAll = function findAll(selector) {
             try {
                 return document.querySelectorAll(selector);
             } catch (e) {
@@ -297,7 +297,7 @@
          * @param  String  selector  CSS3 selector
          * @return HTMLElement|undefined
          */
-        this.findOne = function(selector) {
+        this.findOne = function findOne(selector) {
             try {
                 return document.querySelector(selector);
             } catch (e) {
@@ -314,7 +314,7 @@
          * @param  Object  data    The request data, optional
          * @return String          Base64 contents string
          */
-        this.getBase64 = function(url, method, data, cb) {
+        this.getBase64 = function getBase64(url, method, data, cb) {
             var self = this;
             this.getBinary(url, method, data, function(arrayBuffer) {
                 cb(self.encode(arrayBuffer));
@@ -330,7 +330,7 @@
          * @param  Object  data
          * @return string
          */
-        this.getBinary = function(url, method, data, cb) {
+        this.getBinary = function getBinary(url, method, data, cb) {
             try {
                 var xhr = new XMLHttpRequest(), dataString = "";
                 if (typeof method !== "string" || ["GET", "POST"].indexOf(method.toUpperCase()) === -1) {
@@ -373,7 +373,7 @@
          * @param  String  selector
          * @return Object or null
          */
-        this.getElementBounds = function(selector) {
+        this.getElementBounds = function getElementBounds(selector) {
             try {
                 var clipRect = document.querySelector(selector).getBoundingClientRect();
                 return {
@@ -394,7 +394,7 @@
          * @param  String  message  The message to log
          * @param  String  level    The log level
          */
-        this.log = function(message, level) {
+        this.log = function log(message, level) {
             console.log("[casper:" + (level || "debug") + "] " + message);
         };
 
@@ -405,7 +405,7 @@
          * @param  HTMLElement|NodeList  field  One or more element defining a field
          * @param  mixed                 value  The field value to set
          */
-        this.setField = function(field, value) {
+        this.setField = function setField(field, value) {
             var fields, out;
             value = value || "";
             if (field instanceof NodeList) {
@@ -450,7 +450,7 @@
                                 if (!Array.isArray(values)) {
                                     values = [values];
                                 }
-                                Array.prototype.forEach.call(fields, function(f) {
+                                Array.prototype.forEach.call(fields, function _forEach(f) {
                                     f.checked = values.indexOf(f.value) !== -1 ? true : false;
                                 });
                             } else {
@@ -465,7 +465,7 @@
                             };
                         case "radio":
                             if (fields) {
-                                Array.prototype.forEach.call(fields, function(e) {
+                                Array.prototype.forEach.call(fields, function _forEach(e) {
                                     e.checked = (e.value === value);
                                 });
                             } else {
@@ -499,7 +499,7 @@
          * @param  String  selector  CSS3 selector
          * @return Boolean
          */
-        this.visible = function(selector) {
+        this.visible = function visible(selector) {
             try {
                 var el = document.querySelector(selector);
                 return el && el.style.visibility !== 'hidden' && el.offsetHeight > 0 && el.offsetWidth > 0;
