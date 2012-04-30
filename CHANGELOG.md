@@ -1,7 +1,23 @@
 CasperJS Changelog
 ==================
 
-XXXX-XX-XX, v0.6.5
+XXXX-XX-XX, v0.6.7
+------------------
+
+- merged [PR #96](https://github.com/n1k0/casperjs/pull/96): make python launcher use `os.execvp()` instead of `subprocess.Popen()` ([@jart](https://github.com/jart)):
+  > This patch fixes a bug where casperjs' python launcher process won't pass along kill
+  > signals to the phantomjs subprocess. This patch works by using an exec system call
+  > which causes the phantomjs subprocess to completely replace the casperjs parent
+  > process (while maintaining the same pid). This patch also has the added benefit of
+  > saving 10 megs or so of memory because the python process is discarded.
+
+2012-04-27, v0.6.6
+------------------
+
+- **BC BREAK:**: moved the `page.initialized` event to where it should have always been, and is now using native phantomjs `onInitialized` event
+- fixed [#95](https://github.com/n1k0/casperjs/issues/95) - `Tester.assertSelectorExists` was broken
+
+2012-03-28, v0.6.5
 ------------------
 
 - **BC BREAK:** reverted 8347278 (refs [#34](https://github.com/n1k0/casperjs/issues/34) and added a new `clear()` method to *close* a page

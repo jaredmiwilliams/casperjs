@@ -526,7 +526,7 @@ Casper.prototype.fill = function fill(selector, vals, submit) {
     if (submit) {
         this.evaluate(function(selector) {
             var form = __utils__.findOne(selector);
-            var method = form.getAttribute('method').toUpperCase() || "GET";
+            var method = (form.getAttribute('method') || "GET").toUpperCase();
             var action = form.getAttribute('action') || "unknown";
             __utils__.log('submitting form to ' + action + ', HTTP ' + method, 'info');
             form.submit();
@@ -899,11 +899,6 @@ Casper.prototype.start = function start(location, then) {
             }
         }, this.options.timeout, this);
     }
-    this.emit('page.initialized', this);
-    if (utils.isFunction(this.options.onPageInitialized)) {
-        this.log("Post-configuring WebPage instance", "debug");
-        this.options.onPageInitialized.call(this, this.page);
-    }
     if (utils.isString(location) && location.length > 0) {
         return this.thenOpen(location, utils.isFunction(then) ? then : this.createStep(function(self) {
             self.log("start page is loaded", "debug");
@@ -1264,6 +1259,13 @@ function createPage(casper) {
         }
         casper.log(msg, level, "remote");
         casper.emit('remote.message', msg);
+    };
+    page.onInitialized = function() {
+        casper.emit('page.initialized', this);
+        if (utils.isFunction(casper.options.onPageInitialized)) {
+            this.log("Post-configuring WebPage instance", "debug");
+            casper.options.onPageInitialized.call(casper, page);
+        }
     };
     page.onLoadStarted = function() {
         casper.loadInProgress = true;
