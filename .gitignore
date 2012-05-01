@@ -2,4 +2,5 @@
 *.xml
 *.png
 /docs/docs-venv
+/docs/build
 /tmp
