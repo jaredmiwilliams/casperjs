@@ -1,41 +1,37 @@
-""" Capture multiple pages of google search results
+# Capture multiple pages of google search results
+#
+# usage:  casperjs googlepagination.coffee my search terms
+#
+# (all arguments will be used as the query)
 
-    usage:  casperjs googlepagination.coffee my search terms
-
-    (all arguments will be used as the query)
-"""
 casper = require('casper').create()
+currentPage = 1
 
 if casper.cli.args.length == 0
   casper.echo "usage: $ casperjs my search terms"
   casper.exit()
 
-casper.start 'http://google.com', ->
-  @fill 'form[name=f]',  q: casper.cli.args.join(' '), true
-  @click 'input[value="Google Search"]'
+processPage = ->
+  @echo "capturing page #{currentPage}"
+  @capture "google-results-p#{currentPage}.png"
 
-casper.then ->
-  # google's being all ajaxy, wait for results to load...
-  @waitForSelector 'table#nav', ->
-    processPage = (cspr) ->
-      currentPage = Number cspr.evaluate(-> document.querySelector('table#nav td.cur').innerText), 10
-      currentPage = 1 if currentPage == 0
-      cspr.capture "google-results-p#{ currentPage }.png"
+  # don't go too far down the rabbit hole
+  return if currentPage >= 5
 
-      # don't go too far down the rabbit hole
-      return if currentPage >= 5
+  if @exists "#pnnext"
+    currentPage++
+    @echo "requesting next page: #{currentPage}"
+    #@thenClick("#pnnext").then(processPage)
+    url = @getCurrentUrl()
+    @thenClick("#pnnext").then ->
+      check = -> url != @getCurrentUrl()
+      @waitFor check, processPage
+  else
+    @echo "that's all, folks."
 
-      cspr.evaluate ->
-        if nextLink = document.querySelector('table#nav td.cur').nextElementSibling?.querySelector('a')
-          nextLink.setAttribute "id", "next-page-of-results"
+casper.start 'http://google.fr/', ->
+  @fill 'form[action="/search"]',  q: casper.cli.args.join(' '), true
 
-      nextPage = "a#next-page-of-results"
-      if cspr.exists nextPage
-        cspr.echo "requesting next page..."
-        cspr.thenClick(nextPage).then(processPage)
-      else
-        cspr.echo "that's all, folks."
-
-    processPage(casper)
+casper.then processPage
 
 casper.run()

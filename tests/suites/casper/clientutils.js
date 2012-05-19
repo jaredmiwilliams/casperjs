@@ -1,5 +1,6 @@
 var fs = require('fs');
 var clientutils = require('clientutils').create();
+
 var testCases = {
     'an empty string': '',
     'a word':          'plop',

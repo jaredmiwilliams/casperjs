@@ -33,7 +33,7 @@ var events = require('events');
 var utils = require('utils');
 var f = utils.format;
 
-exports.create = function(casper, options) {
+exports.create = function create(casper, options) {
     return new Tester(casper, options);
 };
 
@@ -41,7 +41,7 @@ exports.create = function(casper, options) {
  * Casper tester: makes assertions, stores test results and display then.
  *
  */
-var Tester = function(casper, options) {
+var Tester = function Tester(casper, options) {
     if (!utils.isCasperObject(casper)) {
         throw new CasperError("Tester needs a Casper instance");
     }
@@ -64,16 +64,16 @@ var Tester = function(casper, options) {
     };
 
     // events
-    casper.on('step.error', function(e) {
+    casper.on('step.error', function onStepError(e) {
         casper.test.fail(e);
         casper.test.done();
     });
 
-    this.on('success', function(success) {
+    this.on('success', function onSuccess(success) {
         this.exporter.addSuccess(fs.absolute(success.file), success.message);
     });
 
-    this.on('fail', function(failure) {
+    this.on('fail', function onFail(failure) {
         this.exporter.addFailure(fs.absolute(failure.file), failure.message, failure.details || "test failed", failure.type || "unknown");
         this.testResults.failures.push(failure);
     });
@@ -85,7 +85,7 @@ var Tester = function(casper, options) {
      * @param  Boolean  subject
      * @param  String   message  Test description
      */
-    this.assert = function assert(subject, message) {
+    this.assert = this.assertTrue = function assert(subject, message) {
         var status = this.options.passText, eventName;
         if (subject === true) {
             eventName = 'success';
@@ -116,7 +116,7 @@ var Tester = function(casper, options) {
      * @param  Mixed   expected   The expected value
      * @param  String  message    Test description
      */
-    this.assertEquals = function assertEquals(subject, expected, message) {
+    this.assertEquals = this.assertEqual = function assertEquals(subject, expected, message) {
         var eventName;
         message = message || "";
         if (this.testEquals(subject, expected)) {
@@ -143,6 +143,41 @@ var Tester = function(casper, options) {
     };
 
     /**
+     * Asserts that two values are strictly not equals.
+     *
+     * @param  Mixed   subject    The value to test
+     * @param  Mixed   expected   The unwanted value
+     * @param  String  message    Test description
+     */
+
+    this.assertNotEquals = function assertNotEquals(subject, shouldnt, message) {
+        var eventName;
+        message = message || "";
+        if (!this.testEquals(subject, shouldnt)) {
+            eventName = "success";
+            casper.echo(this.colorize(this.options.passText, 'INFO') + ' ' + this.formatMessage(message));
+            this.testResults.passed++;
+        } else {
+            eventName = "fail";
+            casper.echo(this.colorize(this.options.failText, 'RED_BAR') + ' ' + this.formatMessage(message, 'WARNING'));
+            this.comment('   got:      ' + utils.serialize(subject));
+            this.comment('   shouldnt: ' + utils.serialize(shouldnt));
+            this.testResults.failed++;
+        }
+        this.emit(eventName, {
+            type:   "assertNotEquals",
+            message: message,
+            details: f("test failed; shouldnt: %s; got: %s", shouldnt, subject),
+            file:    this.currentTestFile,
+            values:  {
+                subject:  subject,
+                shouldnt: shouldnt
+            }
+        });
+    };
+
+
+    /**
      * Asserts that a code evaluation in remote DOM resolves to true.
      *
      * @param  Function  fn         A function to be evaluated in remote DOM
@@ -162,7 +197,7 @@ var Tester = function(casper, options) {
      * @param  String   message    Test description
      * @param  Object   context    Object containing the parameters to inject into the function (optional)
      */
-    this.assertEvalEquals = function assertEvalEquals(fn, expected, message, context) {
+    this.assertEvalEquals = this.assertEvalEqual = function assertEvalEquals(fn, expected, message, context) {
         return this.assertEquals(casper.evaluate(fn, context), expected, message);
     };
 
@@ -173,8 +208,12 @@ var Tester = function(casper, options) {
      * @param  String   selector   CSS3 selector
      * @param  String   message    Test description
      */
-    this.assertExists = function assertExists(selector, message) {
+    this.assertExists = this.assertExist = function assertExists(selector, message) {
         return this.assert(casper.exists(selector), message);
+    };
+
+    this.assertDoesntExist = this.assertNotExists = function assertDoesntExist(selector, message) {
+        return this.assertNot(casper.exists(selector), message);
     };
 
     /**
@@ -194,7 +233,7 @@ var Tester = function(casper, options) {
      * @param  RegExp   pattern    A RegExp object instance
      * @param  String   message    Test description
      */
-    this.assertMatch = function assertMatch(subject, pattern, message) {
+    this.assertMatch = this.assertMatches = function assertMatch(subject, pattern, message) {
         var eventName;
         if (pattern.test(subject)) {
             eventName = "success";
@@ -237,7 +276,7 @@ var Tester = function(casper, options) {
      * @param  Array     args     The arguments to pass to the function
      * @param  String    message  Test description
      */
-    this.assertRaises = function assertRaises(fn, args, message) {
+    this.assertRaises = this.assertRaise = function assertRaises(fn, args, message) {
         try {
             fn.apply(null, args);
             this.fail(message);
@@ -252,7 +291,7 @@ var Tester = function(casper, options) {
      * @param Function/String  test      A test function that is called with every response
      * @param  String   message    Test description
      */
-    this.assertResourceExists = function assertResourceExists(test, message) {
+    this.assertResourceExists = this.assertResourceExist = function assertResourceExists(test, message) {
         return this.assert(casper.resourceExists(test), message);
     };
 
@@ -263,8 +302,8 @@ var Tester = function(casper, options) {
      * @param  String   selector   A CSS3 selector string
      * @param  String   message    Test description
      */
-    this.assertSelectorExists = function assertSelectorExists(selector, message) {
-        return this.assert(this.exists(selector), message);
+    this.assertSelectorExists = this.assertSelectorExist = function assertSelectorExists(selector, message) {
+        return this.assert(casper.exists(selector), message);
     };
 
     /**
@@ -273,8 +312,8 @@ var Tester = function(casper, options) {
      * @param  String   text       Text to be found
      * @param  String   message    Test description
      */
-    this.assertTextExists = function assertTextExists(text, message) {
-        return this.assert((casper.evaluate(function() {
+    this.assertTextExists = this.assertTextExist = function assertTextExists(text, message) {
+        return this.assert((casper.evaluate(function _evaluate() {
             return document.body.innerText;
         }).indexOf(text) != -1), message);
     };
@@ -307,7 +346,7 @@ var Tester = function(casper, options) {
      * @param  RegExp   pattern    A RegExp object instance
      * @param  String   message    Test description
      */
-    this.assertUrlMatch = function assertUrlMatch(pattern, message) {
+    this.assertUrlMatch = this.assertUrlMatches = function assertUrlMatch(pattern, message) {
         return this.assertMatch(casper.getCurrentUrl(), pattern, message);
     };
 
@@ -366,13 +405,10 @@ var Tester = function(casper, options) {
         try {
             new Function('casper', phantom.getScriptCode(file))(casper);
         } catch (e) {
-            var self = this;
-            phantom.processScriptError(e, file, function(error) {
-                // do not abort the whole suite, just fail fast displaying the
-                // caught error and process next suite
-                self.fail(e);
-                self.done();
-            });
+            // do not abort the whole suite, just fail fast displaying the
+            // caught error and process next suite
+            this.fail(e);
+            this.done();
         }
     };
 
@@ -395,17 +431,17 @@ var Tester = function(casper, options) {
         if (!fs.isDirectory(dir)) {
             return [];
         }
-        var entries = fs.list(dir).filter(function(entry) {
+        var entries = fs.list(dir).filter(function _filter(entry) {
             return entry !== '.' && entry !== '..';
-        }).map(function(entry) {
+        }).map(function _map(entry) {
             return fs.absolute(fs.pathJoin(dir, entry));
         });
-        entries.forEach(function(entry) {
+        entries.forEach(function _forEach(entry) {
             if (fs.isDirectory(entry)) {
                 entries = entries.concat(self.findTestFiles(entry));
             }
         });
-        return entries.filter(function(entry) {
+        return entries.filter(function _filter(entry) {
             return utils.isJsFile(fs.absolute(fs.pathJoin(dir, entry)));
         }).sort();
     };
@@ -452,7 +488,7 @@ var Tester = function(casper, options) {
             return;
         }
         casper.echo(f("\nDetails for the %d failed test%s:\n", failures.length, failures.length > 1 ? "s" : ""), "PARAMETER");
-        failures.forEach(function(failure) {
+        failures.forEach(function _forEach(failure) {
             var message, line;
             if (utils.isType(failure.message, "object") && failure.message.stack) {
                 line = failure.message.line ? failure.message.line : 0;
@@ -516,7 +552,7 @@ var Tester = function(casper, options) {
         if (arguments.length === 0) {
             throw new CasperError("runSuites() needs at least one path argument");
         }
-        Array.prototype.forEach.call(arguments, function(path) {
+        Array.prototype.forEach.call(arguments, function _forEach(path) {
             if (!fs.exists(path)) {
                 self.bar(f("Path %s doesn't exist", path), "RED_BAR");
             }
@@ -531,7 +567,7 @@ var Tester = function(casper, options) {
             casper.exit(1);
         }
         var current = 0;
-        var interval = setInterval(function(self) {
+        var interval = setInterval(function _check(self) {
             if (self.running) {
                 return;
             }
@@ -567,7 +603,7 @@ var Tester = function(casper, options) {
      * @param  Mixed  v2
      * @param  Boolean
      */
-    this.testEquals = function testEquals(v1, v2) {
+    this.testEquals = this.testEqual = function testEquals(v1, v2) {
         if (utils.betterTypeOf(v1) !== utils.betterTypeOf(v2)) {
             return false;
         }

@@ -1,6 +1,26 @@
 CasperJS Changelog
 ==================
 
+2012-05-12, v0.6.7
+------------------
+
+- fixes [#107](https://github.com/n1k0/casperjs/issues/107): client utils were possibly not yet being injected and available when calling `Capser.base64encode()` from some events
+- merged [PR #96](https://github.com/n1k0/casperjs/pull/96): make python launcher use `os.execvp()` instead of `subprocess.Popen()` ([@jart](https://github.com/jart)):
+  > This patch fixes a bug where casperjs' python launcher process won't pass along kill
+  > signals to the phantomjs subprocess. This patch works by using an exec system call
+  > which causes the phantomjs subprocess to completely replace the casperjs parent
+  > process (while maintaining the same pid). This patch also has the added benefit of
+  > saving 10 megs or so of memory because the python process is discarded.
+- fixes [#109](https://github.com/n1k0/casperjs/issues/109) - CLI args containing `=` (equals sign) were not parsed properly
+- fixes [#100](https://github.com/n1k0/casperjs/issues/100) & [#110](https://github.com/n1k0/casperjs/issues/110) - *googlepagination* sample was broken
+- merged #103 - added `Tester.assertNotEquals` method (@juliangruber)
+
+2012-04-27, v0.6.6
+------------------
+
+- **BC BREAK:**: moved the `page.initialized` event to where it should have always been, and is now using native phantomjs `onInitialized` event
+- fixed [#95](https://github.com/n1k0/casperjs/issues/95) - `Tester.assertSelectorExists` was broken
+
 2012-03-28, v0.6.5
 ------------------
 
